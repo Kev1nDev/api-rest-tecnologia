@@ -13,7 +13,7 @@ Este proyecto es una API RESTful desarrollada en Node.js y Express, conectada a 
 
 1. Clona el repositorio:
    ```bash
-   git clone <URL_DE_TU_REPOSITORIO>
+   git clone https://github.com/Kev1nDev/api-rest-tecnologia.git
    cd tecnologia
    ```
 2. Instala las dependencias:
