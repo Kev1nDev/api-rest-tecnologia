@@ -1,0 +1,454 @@
+================================================================================
+                    PRUEBAS COMPLETAS DE LA API RESTFUL
+                    ====================================
+
+DESCRIPCIÓN DEL SOFTWARE:
+========================
+
+Esta es una API RESTful desarrollada en Node.js y Express que implementa:
+
+1. SISTEMA DE AUTENTICACIÓN:
+   - Registro de usuarios con encriptación de contraseñas
+   - Login con generación de tokens JWT
+   - Refresh tokens para renovar sesiones
+   - Middleware de autenticación para proteger rutas
+
+2. SISTEMA DE ROLES:
+   - Dos roles: "admin" y "usuario"
+   - Admin: Puede crear, editar, eliminar y ver productos
+   - Usuario: Solo puede ver productos
+   - Middleware de autorización por roles
+
+3. CRUD COMPLETO DE PRODUCTOS:
+   - Create: Crear productos (solo admin)
+   - Read: Ver productos (usuarios autenticados)
+   - Update: Actualizar productos (solo admin)
+   - Delete: Eliminar productos (solo admin)
+
+4. BASE DE DATOS:
+   - MongoDB con Mongoose
+   - Modelos para usuarios y productos
+   - Conexión configurada en configuracion/bd.js
+
+5. ESTRUCTURA ORGANIZADA:
+   - controladores/: Lógica de negocio
+   - intermedios/: Middlewares de autenticación y roles
+   - modelos/: Esquemas de MongoDB
+   - rutas/: Definición de endpoints
+   - configuracion/: Configuración de base de datos
+
+================================================================================
+                    PRUEBAS PASO A PASO
+                    ====================
+
+PREREQUISITOS:
+- Servidor corriendo en puerto 4000
+- MongoDB activo
+- Archivo .env configurado
+
+================================================================================
+
+1. PRUEBA DE REGISTRO DE USUARIOS
+=================================
+
+1.1. Registrar usuario admin:
+curl -X POST http://localhost:4000/api/usuarios/registro \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre_usuario": "admin",
+    "contraseña": "admin123",
+    "rol": "admin"
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Usuario registrado correctamente"}
+
+1.2. Registrar usuario normal:
+curl -X POST http://localhost:4000/api/usuarios/registro \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre_usuario": "usuario1",
+    "contraseña": "123456",
+    "rol": "usuario"
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Usuario registrado correctamente"}
+
+1.3. Intentar registrar usuario duplicado (debe fallar):
+curl -X POST http://localhost:4000/api/usuarios/registro \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre_usuario": "admin",
+    "contraseña": "otra123",
+    "rol": "admin"
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"El usuario ya existe"}
+
+================================================================================
+
+2. PRUEBA DE LOGIN Y OBTENCIÓN DE TOKENS
+========================================
+
+2.1. Login como admin:
+curl -X POST http://localhost:4000/api/usuarios/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre_usuario": "admin",
+    "contraseña": "admin123"
+  }'
+
+RESPUESTA ESPERADA:
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+
+2.2. Login como usuario normal:
+curl -X POST http://localhost:4000/api/usuarios/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre_usuario": "usuario1",
+    "contraseña": "123456"
+  }'
+
+RESPUESTA ESPERADA:
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+
+2.3. Login con credenciales incorrectas (debe fallar):
+curl -X POST http://localhost:4000/api/usuarios/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre_usuario": "admin",
+    "contraseña": "contraseña_incorrecta"
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Usuario o contraseña incorrectos"}
+
+================================================================================
+
+3. PRUEBA DE RENOVACIÓN DE TOKENS
+=================================
+
+3.1. Renovar token usando refresh token:
+curl -X POST http://localhost:4000/api/usuarios/renovar-token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "TU_REFRESH_TOKEN_AQUI"
+  }'
+
+RESPUESTA ESPERADA:
+{"token":"NUEVO_TOKEN_DE_ACCESO"}
+
+3.2. Renovar con refresh token inválido (debe fallar):
+curl -X POST http://localhost:4000/api/usuarios/renovar-token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "token_invalido"
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Refresh token inválido"}
+
+================================================================================
+
+4. PRUEBAS DE CRUD DE PRODUCTOS (SIN AUTENTICACIÓN)
+===================================================
+
+4.1. Intentar ver productos sin token (debe fallar):
+curl -X GET http://localhost:4000/api/productos
+
+RESPUESTA ESPERADA:
+{"mensaje":"Token no proporcionado"}
+
+4.2. Intentar crear producto sin token (debe fallar):
+curl -X POST http://localhost:4000/api/productos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Producto sin token",
+    "precio": 100
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Token no proporcionado"}
+
+4.3. Intentar con token inválido (debe fallar):
+curl -X GET http://localhost:4000/api/productos \
+  -H "Authorization: Bearer token_invalido"
+
+RESPUESTA ESPERADA:
+{"mensaje":"Token inválido"}
+
+================================================================================
+
+5. PRUEBAS DE CRUD DE PRODUCTOS (CON AUTENTICACIÓN)
+===================================================
+
+GUARDA LOS TOKENS OBTENIDOS EN EL LOGIN PARA USARLOS AQUÍ:
+
+TOKEN_ADMIN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  # Token del admin
+TOKEN_USUARIO="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  # Token del usuario normal
+
+5.1. Ver productos como admin:
+curl -X GET http://localhost:4000/api/productos \
+  -H "Authorization: Bearer $TOKEN_ADMIN"
+
+RESPUESTA ESPERADA:
+[]  # Array vacío si no hay productos
+
+5.2. Crear producto como admin:
+curl -X POST http://localhost:4000/api/productos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_ADMIN" \
+  -d '{
+    "nombre": "Laptop Gaming",
+    "precio": 1500,
+    "descripcion": "Laptop para juegos de alto rendimiento"
+  }'
+
+RESPUESTA ESPERADA:
+{
+  "nombre": "Laptop Gaming",
+  "precio": 1500,
+  "descripcion": "Laptop para juegos de alto rendimiento",
+  "_id": "ID_GENERADO",
+  "__v": 0
+}
+
+5.3. Crear otro producto como admin:
+curl -X POST http://localhost:4000/api/productos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_ADMIN" \
+  -d '{
+    "nombre": "Mouse Inalámbrico",
+    "precio": 50,
+    "descripcion": "Mouse ergonómico inalámbrico"
+  }'
+
+5.4. Ver productos como usuario normal:
+curl -X GET http://localhost:4000/api/productos \
+  -H "Authorization: Bearer $TOKEN_USUARIO"
+
+RESPUESTA ESPERADA:
+[
+  {
+    "nombre": "Laptop Gaming",
+    "precio": 1500,
+    "descripcion": "Laptop para juegos de alto rendimiento",
+    "_id": "ID_GENERADO"
+  },
+  {
+    "nombre": "Mouse Inalámbrico",
+    "precio": 50,
+    "descripcion": "Mouse ergonómico inalámbrico",
+    "_id": "ID_GENERADO"
+  }
+]
+
+5.5. Ver producto específico por ID:
+curl -X GET http://localhost:4000/api/productos/ID_DEL_PRODUCTO \
+  -H "Authorization: Bearer $TOKEN_ADMIN"
+
+RESPUESTA ESPERADA:
+{
+  "nombre": "Laptop Gaming",
+  "precio": 1500,
+  "descripcion": "Laptop para juegos de alto rendimiento",
+  "_id": "ID_GENERADO"
+}
+
+5.6. Actualizar producto como admin:
+curl -X PUT http://localhost:4000/api/productos/ID_DEL_PRODUCTO \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_ADMIN" \
+  -d '{
+    "nombre": "Laptop Gaming Pro",
+    "precio": 1800
+  }'
+
+RESPUESTA ESPERADA:
+{
+  "nombre": "Laptop Gaming Pro",
+  "precio": 1800,
+  "descripcion": "Laptop para juegos de alto rendimiento",
+  "_id": "ID_GENERADO"
+}
+
+5.7. Eliminar producto como admin:
+curl -X DELETE http://localhost:4000/api/productos/ID_DEL_PRODUCTO \
+  -H "Authorization: Bearer $TOKEN_ADMIN"
+
+RESPUESTA ESPERADA:
+{"mensaje":"Producto eliminado"}
+
+================================================================================
+
+6. PRUEBAS DE AUTORIZACIÓN POR ROLES
+====================================
+
+6.1. Usuario normal intenta crear producto (debe fallar):
+curl -X POST http://localhost:4000/api/productos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_USUARIO" \
+  -d '{
+    "nombre": "Producto no autorizado",
+    "precio": 100
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Acceso denegado: rol insuficiente"}
+
+6.2. Usuario normal intenta actualizar producto (debe fallar):
+curl -X PUT http://localhost:4000/api/productos/ID_DEL_PRODUCTO \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_USUARIO" \
+  -d '{
+    "nombre": "Producto modificado"
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Acceso denegado: rol insuficiente"}
+
+6.3. Usuario normal intenta eliminar producto (debe fallar):
+curl -X DELETE http://localhost:4000/api/productos/ID_DEL_PRODUCTO \
+  -H "Authorization: Bearer $TOKEN_USUARIO"
+
+RESPUESTA ESPERADA:
+{"mensaje":"Acceso denegado: rol insuficiente"}
+
+6.4. Usuario normal puede ver productos (debe funcionar):
+curl -X GET http://localhost:4000/api/productos \
+  -H "Authorization: Bearer $TOKEN_USUARIO"
+
+RESPUESTA ESPERADA:
+[Array con productos]
+
+================================================================================
+
+7. PRUEBAS DE MANEJO DE ERRORES
+================================
+
+7.1. Producto no encontrado:
+curl -X GET http://localhost:4000/api/productos/ID_INEXISTENTE \
+  -H "Authorization: Bearer $TOKEN_ADMIN"
+
+RESPUESTA ESPERADA:
+{"mensaje":"Producto no encontrado"}
+
+7.2. Actualizar producto inexistente:
+curl -X PUT http://localhost:4000/api/productos/ID_INEXISTENTE \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_ADMIN" \
+  -d '{
+    "nombre": "Producto inexistente"
+  }'
+
+RESPUESTA ESPERADA:
+{"mensaje":"Producto no encontrado"}
+
+7.3. Eliminar producto inexistente:
+curl -X DELETE http://localhost:4000/api/productos/ID_INEXISTENTE \
+  -H "Authorization: Bearer $TOKEN_ADMIN"
+
+RESPUESTA ESPERADA:
+{"mensaje":"Producto no encontrado"}
+
+================================================================================
+
+8. PRUEBA DE LA RUTA RAÍZ
+=========================
+
+8.1. Verificar que el servidor responde:
+curl -X GET http://localhost:4000/
+
+RESPUESTA ESPERADA:
+API RESTful de ejemplo con autenticación y roles
+
+================================================================================
+
+RESUMEN DE FUNCIONALIDADES VERIFICADAS:
+=======================================
+
+✅ REGISTRO DE USUARIOS:
+   - Registro exitoso de admin y usuario
+   - Validación de usuarios duplicados
+   - Encriptación de contraseñas
+
+✅ SISTEMA DE LOGIN:
+   - Login exitoso con generación de tokens
+   - Validación de credenciales incorrectas
+   - Generación de JWT y refresh tokens
+
+✅ RENOVACIÓN DE TOKENS:
+   - Renovación exitosa con refresh token válido
+   - Rechazo de refresh tokens inválidos
+
+✅ AUTENTICACIÓN:
+   - Protección de rutas sin token
+   - Validación de tokens inválidos
+   - Acceso con tokens válidos
+
+✅ AUTORIZACIÓN POR ROLES:
+   - Admin puede realizar todas las operaciones CRUD
+   - Usuario normal solo puede ver productos
+   - Rechazo de operaciones no autorizadas
+
+✅ CRUD COMPLETO DE PRODUCTOS:
+   - Create: Crear productos (solo admin)
+   - Read: Ver productos (usuarios autenticados)
+   - Update: Actualizar productos (solo admin)
+   - Delete: Eliminar productos (solo admin)
+
+✅ MANEJO DE ERRORES:
+   - Productos no encontrados
+   - Tokens inválidos
+   - Acceso denegado por roles
+
+✅ ESTRUCTURA ORGANIZADA:
+   - Controladores separados
+   - Middlewares de autenticación y roles
+   - Modelos de datos
+   - Rutas organizadas
+
+================================================================================
+
+INSTRUCCIONES PARA EJECUTAR LAS PRUEBAS:
+========================================
+
+1. Asegúrate de que el servidor esté corriendo:
+   npm run dev
+
+2. Asegúrate de que MongoDB esté activo:
+   sudo systemctl status mongod
+
+3. Ejecuta las pruebas en orden:
+   - Primero las pruebas de registro
+   - Luego login para obtener tokens
+   - Después las pruebas de CRUD
+   - Finalmente las pruebas de autorización
+
+4. Guarda los tokens obtenidos en variables:
+   export TOKEN_ADMIN="tu_token_admin"
+   export TOKEN_USUARIO="tu_token_usuario"
+
+5. Reemplaza "ID_DEL_PRODUCTO" con IDs reales obtenidos de las respuestas
+
+================================================================================
+
+NOTAS IMPORTANTES:
+==================
+
+- Los tokens JWT expiran en 15 minutos
+- Los refresh tokens expiran en 7 días
+- Solo usuarios con rol "admin" pueden crear, editar y eliminar productos
+- Todos los usuarios autenticados pueden ver productos
+- Las contraseñas se encriptan con bcrypt
+- La base de datos es MongoDB con Mongoose
+
+================================================================================ 

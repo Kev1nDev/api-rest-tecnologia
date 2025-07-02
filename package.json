@@ -1,0 +1,32 @@
+{
+  "name": "tecnologia",
+  "version": "1.0.0",
+  "description": "API RESTful de productos con autenticación JWT y roles (admin/usuario)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "api",
+    "express",
+    "jwt",
+    "mongodb",
+    "productos",
+    "autenticacion",
+    "roles"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.8.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
